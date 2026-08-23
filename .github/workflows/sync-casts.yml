@@ -1,0 +1,92 @@
+name: Sync casts from spreadsheet
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 * * * *"
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch spreadsheet CSV and write JSON
+        env:
+          CAST_SHEET_CSV_URL: ${{ secrets.CAST_SHEET_CSV_URL }}
+        run: |
+          set -euo pipefail
+          if [ -z "${CAST_SHEET_CSV_URL:-}" ]; then
+            echo "Set repository secret CAST_SHEET_CSV_URL to the published CSV URL."
+            exit 1
+          fi
+          curl -fsSL "$CAST_SHEET_CSV_URL" -o /tmp/casts.csv
+          python3 - <<'PY'
+          import csv, json, io, os
+          from pathlib import Path
+
+          text = Path("/tmp/casts.csv").read_text(encoding="utf-8-sig")
+          reader = csv.DictReader(io.StringIO(text))
+
+          def pick(row, *keys):
+              lower = { (k or "").strip().lower(): (v or "").strip() for k, v in row.items() }
+              for key in keys:
+                  if key.lower() in lower and lower[key.lower()]:
+                      return lower[key.lower()]
+              return ""
+
+          def is_hidden(value):
+              return value.lower() in {"0", "false", "no", "非表示", "なし", "ng"}
+
+          def make_id(name, explicit):
+              if explicit:
+                  return explicit
+              return name
+
+          casts = []
+          for row in reader:
+              name = pick(row, "名前", "氏名", "name")
+              if not name:
+                  continue
+              visible = pick(row, "表示", "visible", "show")
+              if visible and is_hidden(visible):
+                  continue
+              photos = [
+                  pick(row, "写真1", "photo1", "画像1"),
+                  pick(row, "写真2", "photo2", "画像2"),
+                  pick(row, "写真3", "photo3", "画像3"),
+              ]
+              casts.append({
+                  "id": make_id(name, pick(row, "id", "ID")),
+                  "name": name,
+                  "gender": pick(row, "性別", "gender"),
+                  "race": pick(row, "種族", "race"),
+                  "grade": pick(row, "学年", "grade", "role"),
+                  "personality": pick(row, "性格", "personality"),
+                  "birthday": pick(row, "誕生日", "birthday"),
+                  "color": pick(row, "イメージカラー", "color", "イメージカラーコード"),
+                  "quote": pick(row, "一言", "紹介", "キャッチ", "quote", "catch"),
+                  "icon": pick(row, "アイコン", "icon"),
+                  "photos": [p for p in photos if p],
+              })
+
+          out = Path("data/casts.json")
+          out.parent.mkdir(parents=True, exist_ok=True)
+          out.write_text(json.dumps(casts, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+          print(f"Wrote {len(casts)} casts")
+          PY
+
+      - name: Commit if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/casts.json
+          if git diff --staged --quiet; then
+            echo "No changes"
+          else
+            git commit -m "Update cast data from spreadsheet"
+            git push
+          fi
