@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ほしくず教室 - VRC接客RPイベント</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Yomogi&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <!-- Opening Animation -->
+    <div id="opening-screen">
+        <div class="opening-bg left"></div>
+        <div class="opening-bg right"></div>
+        <div class="opening-content">
+            <img src="assets/images/logo.png" alt="ほしくず教室 ロゴ" class="opening-logo">
+        </div>
+    </div>
+
+    <header class="site-header">
+        <div class="logo-container">
+            <!-- Using logo.png here as well, scaled down by CSS -->
+            <img src="assets/images/logo.png" alt="ほしくず教室 ロゴ" class="logo">
+        </div>
+        <nav class="main-nav">
+            <ul>
+                <li><a href="#concept">世界観</a></li>
+                <li><a href="#news">お知らせ</a></li>
+                <li><a href="#cast">キャスト</a></li>
+                <li><a href="#rules">規約</a></li>
+                <li><a href="#join">参加方法</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <section id="hero" class="hero-section">
+            <div class="slideshow-container" id="slideshow">
+                <!-- Slides will be inserted here by JS -->
+            </div>
+            <div class="hero-overlay"></div>
+            <div class="hero-content">
+                <h1>ほしくず教室</h1>
+                <p class="catchphrase">学んで、遊んで、はたらいて！<br>キラキラ輝くこのお店に、いらっしゃいませ！</p>
+            </div>
+        </section>
+
+        <section id="concept" class="section bg-cream">
+            <div class="container">
+                <h2>世界観</h2>
+                <div class="concept-card">
+                    <p>
+                        当イベントは小中一貫校「天瀬国際学園」に通う<br>
+                        ~~~~~~~~~~~~~<br>
+                        ~~~~~~~~~~~~~
+                    </p>
+                    <p>
+                        ~~~~~~~~~~~~~<br>
+                        ~~~~~~~~~~~~~<br>
+                        ~~~~~~~~~~~~~
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <section id="news" class="section bg-pink">
+            <div class="container">
+                <h2>お知らせ</h2>
+                <div class="news-container">
+                    <ul class="news-list">
+                        <li>
+                            <span class="date">2024.01.20</span>
+                            <span class="category">Info</span>
+                            <span class="title">Webサイトをリニューアルしました。</span>
+                        </li>
+                        <li>
+                            <span class="date">2024.02.01</span>
+                            <span class="category">Event</span>
+                            <span class="title">第1回「ほしくず教室」開催決定！</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="cast" class="section bg-yellow">
+            <div class="container" style="max-width: 100%;">
+                <h2>キャスト紹介</h2>
+                <div class="cast-section-wrapper">
+                    <div class="cast-carousel" id="castCarousel"></div>
+                </div>
+
+                <div class="view-all-btn-container">
+                    <a href="cast.html" class="btn-primary">もっと見る（全生徒一覧）</a>
+                </div>
+            </div>
+        </section>
+
+        <section id="rules" class="section bg-cream">
+            <div class="container">
+                <h2>規約</h2>
+                <div class="rules-content">
+                    <ul>
+                        <li>VRChatの利用規約を遵守してください。</li>
+                        <li>公序良俗に反するアバターや言動は禁止です。</li>
+                        <li>キャストへの過度な接触や迷惑行為はお控えください。</li>
+                        <li>録音・録画については、キャストの許可を得てください。</li>
+                        <li>イベントの進行を妨げる行為が見られた場合、退室をお願いすることがあります。</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="join" class="section bg-pink">
+            <div class="container">
+                <h2>参加方法</h2>
+                <div class="join-steps">
+                    <div class="step">
+                        <span class="step-number">1</span>
+                        <p>グループ「HoshikuzuClass」に参加</p>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">2</span>
+                        <p>開催時間にFriend+インスタンスへJoin</p>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">3</span>
+                        <p>入り口で案内をお待ちください</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="site-footer">
+        <div class="footer-links">
+            <a href="#" target="_blank">Twitter (X)</a>
+            <a href="#" target="_blank">Discord</a>
+            <a href="#" target="_blank">VRChat Group</a>
+        </div>
+        <p class="copyright">&copy; 2024 ほしくず教室 All Rights Reserved.</p>
+    </footer>
+
+    <script src="data/config.js"></script>
+    <script src="script.js"></script>
+</body>
+
+</html>
