@@ -12,7 +12,7 @@ jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Fetch spreadsheet CSV and write JSON
         env:
@@ -31,8 +31,20 @@ jobs:
           text = Path("/tmp/casts.csv").read_text(encoding="utf-8-sig")
           reader = csv.DictReader(io.StringIO(text))
 
+          def cell_text(value):
+              if value is None:
+                  return ""
+              if isinstance(value, list):
+                  return " ".join(cell_text(item) for item in value).strip()
+              return str(value).strip()
+
           def pick(row, *keys):
-              lower = { (k or "").strip().lower(): (v or "").strip() for k, v in row.items() }
+              lower = {}
+              for k, v in row.items():
+                  key = "" if k is None else str(k).strip().lower()
+                  text = cell_text(v)
+                  if key and text:
+                      lower[key] = text
               for key in keys:
                   if key.lower() in lower and lower[key.lower()]:
                       return lower[key.lower()]
