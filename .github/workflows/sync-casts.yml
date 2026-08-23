@@ -25,11 +25,26 @@ jobs:
           fi
           curl -fsSL "$CAST_SHEET_CSV_URL" -o /tmp/casts.csv
           python3 - <<'PY'
-          import csv, json, io, os
+          import csv, json, io, re, sys
           from pathlib import Path
 
-          text = Path("/tmp/casts.csv").read_text(encoding="utf-8-sig")
-          reader = csv.DictReader(io.StringIO(text))
+          raw = Path("/tmp/casts.csv").read_text(encoding="utf-8-sig")
+          if "<html" in raw[:500].lower():
+              raise SystemExit("The secret URL returned HTML, not CSV. Publish the sheet to the web as CSV.")
+
+          lines = [line for line in raw.splitlines() if line.strip()]
+          header_idx = 0
+          for i, line in enumerate(lines):
+              if "名前" in line or re.search(r"(^|,|\t)name(,|\t|$)", line, re.I):
+                  header_idx = i
+                  break
+          table = "\n".join(lines[header_idx:])
+          dialect = csv.excel_tab if ("\t" in lines[header_idx] and "," not in lines[header_idx]) else csv.excel
+          reader = csv.DictReader(io.StringIO(table), dialect=dialect)
+          print("Headers:", reader.fieldnames)
+
+          def norm_key(value):
+              return re.sub(r"\s+", "", "" if value is None else str(value)).lower()
 
           def cell_text(value):
               if value is None:
@@ -41,13 +56,14 @@ jobs:
           def pick(row, *keys):
               lower = {}
               for k, v in row.items():
-                  key = "" if k is None else str(k).strip().lower()
+                  key = norm_key(k)
                   text = cell_text(v)
                   if key and text:
                       lower[key] = text
               for key in keys:
-                  if key.lower() in lower and lower[key.lower()]:
-                      return lower[key.lower()]
+                  found = lower.get(norm_key(key), "")
+                  if found:
+                      return found
               return ""
 
           def is_hidden(value):
@@ -84,6 +100,11 @@ jobs:
                   "icon": pick(row, "アイコン", "icon"),
                   "photos": [p for p in photos if p],
               })
+
+          if not casts:
+              print("No casts parsed. First 400 chars of CSV:")
+              print(raw[:400])
+              raise SystemExit("Parsed 0 casts. Check that row 1 has 名前 and the CSV URL is the published CSV.")
 
           out = Path("data/casts.json")
           out.parent.mkdir(parents=True, exist_ok=True)
