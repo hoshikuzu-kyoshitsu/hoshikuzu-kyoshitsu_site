@@ -1,4 +1,4 @@
-name: Sync casts from spreadsheet
+name: Sync site data from spreadsheet
 
 on:
   workflow_dispatch:
@@ -14,34 +14,38 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - name: Fetch spreadsheet CSV and write JSON
+      - name: Fetch spreadsheet CSVs and write JSON
         env:
           CAST_SHEET_CSV_URL: ${{ secrets.CAST_SHEET_CSV_URL }}
+          NEWS_SHEET_CSV_URL: ${{ secrets.NEWS_SHEET_CSV_URL }}
+          SLIDES_SHEET_CSV_URL: ${{ secrets.SLIDES_SHEET_CSV_URL }}
+          GALLERY_SHEET_CSV_URL: ${{ secrets.GALLERY_SHEET_CSV_URL }}
         run: |
           set -euo pipefail
-          if [ -z "${CAST_SHEET_CSV_URL:-}" ]; then
-            echo "Set repository secret CAST_SHEET_CSV_URL to the published CSV URL."
-            exit 1
-          fi
-          curl -fsSL "$CAST_SHEET_CSV_URL" -o /tmp/casts.csv
-          python3 - <<'PY'
-          import csv, json, io, re, sys
+          python3 << 'PY'
+          import csv, json, io, os, re, urllib.request
           from pathlib import Path
 
-          raw = Path("/tmp/casts.csv").read_text(encoding="utf-8-sig")
-          if "<html" in raw[:500].lower():
-              raise SystemExit("The secret URL returned HTML, not CSV. Publish the sheet to the web as CSV.")
+          def fetch_csv(url):
+              if not url:
+                  return None
+              req = urllib.request.Request(url, headers={"User-Agent": "hoshikuzu-sync"})
+              with urllib.request.urlopen(req, timeout=60) as res:
+                  raw = res.read().decode("utf-8-sig")
+              if "<html" in raw[:500].lower():
+                  raise SystemExit(f"URL returned HTML, not CSV: {url[:80]}")
+              return raw
 
-          lines = [line for line in raw.splitlines() if line.strip()]
-          header_idx = 0
-          for i, line in enumerate(lines):
-              if "名前" in line or re.search(r"(^|,|\t)name(,|\t|$)", line, re.I):
-                  header_idx = i
-                  break
-          table = "\n".join(lines[header_idx:])
-          dialect = csv.excel_tab if ("\t" in lines[header_idx] and "," not in lines[header_idx]) else csv.excel
-          reader = csv.DictReader(io.StringIO(table), dialect=dialect)
-          print("Headers:", reader.fieldnames)
+          def reader_from(raw, header_hint):
+              lines = [line for line in raw.splitlines() if line.strip()]
+              header_idx = 0
+              for i, line in enumerate(lines):
+                  if header_hint in line:
+                      header_idx = i
+                      break
+              table = "\n".join(lines[header_idx:])
+              dialect = csv.excel_tab if ("\t" in lines[header_idx] and "," not in lines[header_idx]) else csv.excel
+              return csv.DictReader(io.StringIO(table), dialect=dialect)
 
           def norm_key(value):
               return re.sub(r"\s+", "", "" if value is None else str(value)).lower()
@@ -69,57 +73,100 @@ jobs:
           def is_hidden(value):
               return value.lower() in {"0", "false", "no", "非表示", "なし", "ng"}
 
-          def make_id(name, explicit):
-              if explicit:
-                  return explicit
-              return name
+          def write_json(path, data):
+              Path(path).parent.mkdir(parents=True, exist_ok=True)
+              Path(path).write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
-          casts = []
-          for row in reader:
-              name = pick(row, "名前", "氏名", "name")
-              if not name:
-                  continue
-              visible = pick(row, "表示", "visible", "show")
-              if visible and is_hidden(visible):
-                  continue
-              photos = [
-                  pick(row, "写真1", "photo1", "画像1"),
-                  pick(row, "写真2", "photo2", "画像2"),
-                  pick(row, "写真3", "photo3", "画像3"),
-              ]
-              casts.append({
-                  "id": make_id(name, pick(row, "id", "ID")),
-                  "name": name,
-                  "gender": pick(row, "性別", "gender"),
-                  "race": pick(row, "種族", "race"),
-                  "grade": pick(row, "学年", "grade", "role"),
-                  "personality": pick(row, "性格", "personality"),
-                  "birthday": pick(row, "誕生日", "birthday"),
-                  "color": pick(row, "イメージカラー", "color", "イメージカラーコード"),
-                  "quote": pick(row, "一言", "紹介", "キャッチ", "quote", "catch"),
-                  "icon": pick(row, "アイコン", "icon"),
-                  "photos": [p for p in photos if p],
-              })
+          casts = json.loads(Path("data/casts.json").read_text(encoding="utf-8")) if Path("data/casts.json").exists() else []
+          news = json.loads(Path("data/news.json").read_text(encoding="utf-8")) if Path("data/news.json").exists() else []
+          slides = json.loads(Path("data/slides.json").read_text(encoding="utf-8")) if Path("data/slides.json").exists() else []
+          gallery = json.loads(Path("data/gallery.json").read_text(encoding="utf-8")) if Path("data/gallery.json").exists() else []
+          site = json.loads(Path("data/site.json").read_text(encoding="utf-8")) if Path("data/site.json").exists() else {"logo": ""}
 
-          if not casts:
-              print("No casts parsed. First 400 chars of CSV:")
-              print(raw[:400])
-              raise SystemExit("Parsed 0 casts. Check that row 1 has 名前 and the CSV URL is the published CSV.")
+          cast_url = os.environ.get("CAST_SHEET_CSV_URL", "").strip()
+          if cast_url:
+              raw = fetch_csv(cast_url)
+              parsed = []
+              for row in reader_from(raw, "名前"):
+                  name = pick(row, "名前", "氏名", "name")
+                  if not name:
+                      continue
+                  visible = pick(row, "表示", "visible", "show")
+                  if visible and is_hidden(visible):
+                      continue
+                  photos = [pick(row, "写真1", "photo1"), pick(row, "写真2", "photo2"), pick(row, "写真3", "photo3")]
+                  parsed.append({
+                      "name": name,
+                      "kana": pick(row, "フリガナ", "ふりがな", "kana"),
+                      "gender": pick(row, "性別", "gender"),
+                      "race": pick(row, "種族", "race"),
+                      "grade": pick(row, "学年", "grade"),
+                      "personality": pick(row, "性格", "personality"),
+                      "birthday": pick(row, "誕生日", "birthday"),
+                      "color": pick(row, "イメージカラー", "color"),
+                      "quote": pick(row, "一言", "紹介", "quote"),
+                      "icon": pick(row, "アイコン", "icon"),
+                      "photos": [p for p in photos if p],
+                      "video": pick(row, "紹介動画", "動画", "video", "youtube"),
+                      "x": pick(row, "X", "Twitter", "twitter"),
+                  })
+              if not parsed:
+                  raise SystemExit("Parsed 0 casts from CAST_SHEET_CSV_URL")
+              casts = parsed
+              print(f"Wrote {len(casts)} casts")
 
-          out = Path("data/casts.json")
-          out.parent.mkdir(parents=True, exist_ok=True)
-          out.write_text(json.dumps(casts, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-          print(f"Wrote {len(casts)} casts")
+          news_url = os.environ.get("NEWS_SHEET_CSV_URL", "").strip()
+          if news_url:
+              news = []
+              for row in reader_from(fetch_csv(news_url), "タイトル"):
+                  title = pick(row, "タイトル", "title", "見出し")
+                  if not title:
+                      continue
+                  news.append({
+                      "date": pick(row, "日付", "date", "日時"),
+                      "category": pick(row, "カテゴリ", "category", "種別") or "Info",
+                      "title": title,
+                      "url": pick(row, "URL", "url", "リンク"),
+                  })
+              print(f"Wrote {len(news)} news items")
+
+          slides_url = os.environ.get("SLIDES_SHEET_CSV_URL", "").strip()
+          if slides_url:
+              slides = []
+              for row in reader_from(fetch_csv(slides_url), "画像"):
+                  image = pick(row, "画像", "image", "url", "写真")
+                  if not image:
+                      continue
+                  slides.append({"image": image, "title": pick(row, "タイトル", "title", "題名")})
+              print(f"Wrote {len(slides)} slides")
+
+          gallery_url = os.environ.get("GALLERY_SHEET_CSV_URL", "").strip()
+          if gallery_url:
+              gallery = []
+              for row in reader_from(fetch_csv(gallery_url), "画像"):
+                  image = pick(row, "画像", "image", "url", "写真")
+                  if not image:
+                      continue
+                  gallery.append({"image": image, "title": pick(row, "題名", "タイトル", "title")})
+              print(f"Wrote {len(gallery)} gallery items")
+
+          write_json("data/casts.json", casts)
+          write_json("data/news.json", news)
+          write_json("data/slides.json", slides)
+          write_json("data/gallery.json", gallery)
+          write_json("data/site.json", site)
+          Path("data/casts-embed.js").write_text("window.CASTS_EMBED = " + json.dumps(casts, ensure_ascii=False) + ";\n", encoding="utf-8")
+          Path("data/site-embed.js").write_text("window.SITE_EMBED = " + json.dumps({"logo": site.get("logo", ""), "news": news, "slides": slides, "gallery": gallery}, ensure_ascii=False) + ";\n", encoding="utf-8")
           PY
 
       - name: Commit if changed
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/casts.json
+          git add data/casts.json data/casts-embed.js data/news.json data/slides.json data/gallery.json data/site.json data/site-embed.js
           if git diff --staged --quiet; then
             echo "No changes"
           else
-            git commit -m "Update cast data from spreadsheet"
+            git commit -m "Update site data from spreadsheet"
             git push
           fi
