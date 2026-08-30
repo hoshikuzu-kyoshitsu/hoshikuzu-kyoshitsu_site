@@ -1,1 +1,1 @@
-window.SITE_EMBED = { "logo": "", "news": [], "slides": [], "gallery": [] };
+window.SITE_EMBED = {"logo": "", "news": [], "slides": [], "gallery": []};
