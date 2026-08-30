@@ -172,7 +172,7 @@ a {
     display: flex;
     justify-content: center;
     position: relative;
-    overflow: hidden;
+    overflow: visible;
 }
 
 .container {
@@ -371,6 +371,14 @@ a {
     font-weight: bold;
 }
 
+.news-list .title {
+    color: var(--color-text-main);
+}
+
+.news-list a.title:hover {
+    color: var(--color-accent-red);
+}
+
 /* Cast (Homepage Carousel) */
 .cast-section-wrapper {
     position: relative;
@@ -380,10 +388,10 @@ a {
 
 .cast-carousel {
     display: flex;
-    gap: 2rem;
+    gap: 1.6rem;
     overflow-x: auto;
     overflow-y: visible;
-    padding: 6rem 2rem 1rem;
+    padding: 7rem 2rem 1rem;
     scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
@@ -393,35 +401,71 @@ a {
     display: none;
 }
 
-.carousel-card {
-    --cast-accent: var(--color-bg-yellow);
-    flex: 0 0 220px;
+.cast-card {
+    --cast-accent: #DEA5A4;
+    flex: 0 0 210px;
+    display: block;
     position: relative;
-    background-color: white;
-    padding: 5.5rem 1.2rem 1.4rem;
-    border-radius: var(--radius-lg);
     text-align: center;
-    border: 2px solid var(--cast-accent);
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    color: inherit;
 }
 
-.carousel-card .cast-bust-wrap {
+.cast-page-grid .cast-card {
+    flex: none;
+    width: 100%;
+}
+
+.cast-card-stage {
+    position: relative;
+    height: 52px;
+}
+
+.cast-color-band {
+    height: 52px;
+    background: var(--cast-accent);
+    border-radius: 18px 18px 6px 6px;
+    box-shadow: 0 4px 0 rgba(0, 0, 0, 0.06);
+}
+
+.cast-bust-wrap {
     position: absolute;
     left: 50%;
-    bottom: calc(100% - 5.2rem);
+    bottom: 0;
     transform: translateX(-50%);
-    width: 180px;
-    height: 180px;
+    width: 200px;
+    aspect-ratio: 16 / 9;
+    z-index: 3;
     pointer-events: none;
-    filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.18));
+    filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.2));
 }
 
 .cast-bust {
     width: 100%;
     height: 100%;
     object-fit: contain;
-    object-position: bottom center;
+    object-position: center bottom;
     background: transparent;
+}
+
+.cast-card-body {
+    margin-top: 10px;
+    background: white;
+    padding: 1rem 1rem 1.1rem;
+    border-radius: 12px;
+    border: 2px solid var(--cast-accent);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.05);
+}
+
+.cast-card-body h3 {
+    margin-bottom: 0.2rem;
+    font-size: 1.2rem;
+    color: var(--cast-accent);
+}
+
+.cast-card-body p {
+    font-size: 0.92rem;
+    font-family: var(--font-heading);
+    color: var(--color-text-sub);
 }
 
 .cast-empty {
@@ -454,12 +498,12 @@ a {
     color: white;
 }
 
-/* Cast Page (Pop-out 3D Design) */
+/* Cast Page */
 .cast-page-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 5.5rem 1.5rem;
-    padding-top: 2rem;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 7.5rem 1.4rem;
+    padding-top: 7rem;
     align-items: end;
 }
 
@@ -472,105 +516,101 @@ a {
     font-size: 1.4rem;
 }
 
-.popout-card {
-    --cast-accent: var(--color-accent-teal);
-    position: relative;
-    display: block;
-    margin-top: 110px;
-    transition: transform 0.3s;
-}
-
-.popout-card:hover {
-    transform: translateY(-10px);
-}
-
-.popout-info {
-    background: white;
-    padding: 3.2rem 1rem 1.2rem;
-    border-radius: var(--radius-lg);
-    border: 3px solid var(--cast-accent);
-    text-align: center;
-    position: relative;
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
-    background-image: radial-gradient(var(--color-bg-yellow) 15%, transparent 16%);
-    background-size: 20px 20px;
-}
-
-.popout-image-wrapper {
-    position: absolute;
-    left: 50%;
-    bottom: calc(100% - 2.6rem);
-    transform: translateX(-50%);
-    width: 190px;
-    height: 190px;
-    z-index: 10;
-    pointer-events: none;
-    filter: drop-shadow(0 10px 14px rgba(0, 0, 0, 0.2));
-}
-
-.popout-image-wrapper .cast-bust {
-    width: 100%;
-    height: 100%;
-}
-
-.popout-info h3 {
-    margin-bottom: 0.4rem;
-    font-size: 1.25rem;
-    color: var(--cast-accent, var(--color-accent-red));
-}
-
-.popout-info p {
-    font-size: 0.9rem;
-    font-family: var(--font-heading);
-}
-
 .cast-detail {
     --cast-accent: var(--color-accent-teal);
+}
+
+.cast-detail-layout {
     display: grid;
-    gap: 2rem;
+    grid-template-columns: minmax(240px, 38%) 1fr;
+    gap: 2.4rem;
+    align-items: start;
+}
+
+.cast-detail-photo-col {
+    position: sticky;
+    top: 6rem;
 }
 
 .cast-detail-photos {
-    display: grid;
-    gap: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
 }
 
-.cast-detail-photos.count-1 {
-    grid-template-columns: 1fr;
-}
-
-.cast-detail-photos.count-2 {
-    grid-template-columns: repeat(2, 1fr);
-}
-
-.cast-detail-photos.count-3 {
-    grid-template-columns: repeat(3, 1fr);
-}
-
-.cast-detail-photos figure {
+.cast-detail-photo-main {
     margin: 0;
-    background: transparent;
+    background: white;
+    border-radius: var(--radius-lg);
+    border: 4px solid var(--cast-accent);
+    overflow: hidden;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
 }
 
-.cast-detail-photos img {
+.cast-portrait-image {
     width: 100%;
-    max-height: 420px;
-    object-fit: contain;
-    object-position: center bottom;
+    aspect-ratio: 9 / 16;
+    object-fit: cover;
+    object-position: center top;
+    display: block;
+    background: #f4f0ea;
+}
+
+.cast-detail-photo-tabs {
+    display: flex;
+    gap: 0.6rem;
+    justify-content: center;
+}
+
+.cast-photo-tab {
+    width: 56px;
+    aspect-ratio: 9 / 16;
+    padding: 0;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    background: white;
+    opacity: 0.65;
+    transition: opacity 0.2s, border-color 0.2s;
+}
+
+.cast-photo-tab img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
     display: block;
 }
 
-.cast-detail-profile {
+.cast-photo-tab.active,
+.cast-photo-tab:hover {
+    opacity: 1;
+    border-color: var(--cast-accent);
+}
+
+.cast-detail-heading {
+    margin-bottom: 1.4rem;
+}
+
+.cast-detail-name {
+    font-size: 2.6rem;
+    line-height: 1.2;
+    color: var(--cast-accent);
+    margin-bottom: 0.2rem;
+}
+
+.cast-detail-kana {
+    font-size: 1.1rem;
+    letter-spacing: 0.18em;
+    color: var(--color-text-sub);
+}
+
+.cast-detail-info {
     background: white;
     padding: 2rem;
     border-radius: var(--radius-lg);
     border: 4px solid var(--cast-accent);
     box-shadow: 0 10px 24px rgba(0, 0, 0, 0.06);
-}
-
-.cast-detail-name {
-    margin-bottom: 1.5rem;
-    color: var(--cast-accent);
 }
 
 .cast-detail-list {
@@ -604,11 +644,63 @@ a {
 }
 
 .cast-detail-quote {
-    margin-top: 1.8rem;
-    padding-top: 1.2rem;
+    margin-top: 1.5rem;
+    padding-top: 1.1rem;
     border-top: 2px dotted var(--cast-accent);
     font-family: var(--font-heading);
-    font-size: 1.2rem;
+    font-size: 1.15rem;
+}
+
+.cast-detail-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-top: 1.6rem;
+}
+
+.cast-detail-link {
+    display: inline-block;
+    padding: 0.6rem 1.4rem;
+    border-radius: 999px;
+    background: var(--cast-accent);
+    color: white;
+    font-weight: bold;
+    font-family: var(--font-heading);
+}
+
+.cast-detail-link:hover {
+    opacity: 0.9;
+    color: white;
+}
+
+.gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 1.6rem;
+}
+
+.gallery-item {
+    margin: 0;
+    background: white;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    border: 3px solid var(--color-bg-pink);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.05);
+}
+
+.gallery-image {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    display: block;
+    background: #eee;
+}
+
+.gallery-item figcaption {
+    padding: 0.8rem 1rem 1rem;
+    font-family: var(--font-heading);
+    color: var(--color-text-sub);
+    text-align: center;
 }
 
 /* Rules */
@@ -751,9 +843,12 @@ a {
         left: 0;
     }
 
-    .cast-detail-photos.count-2,
-    .cast-detail-photos.count-3 {
+    .cast-detail-layout {
         grid-template-columns: 1fr;
+    }
+
+    .cast-detail-name {
+        font-size: 2rem;
     }
 
     .cast-detail-list {
